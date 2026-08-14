@@ -13,7 +13,9 @@ via the official Go bindings.
 
 Go 1.24+ and a C compiler — the bindings use cgo and compile the grammar's
 `parser.c` as part of `go build`. On macOS the Xcode command line tools are
-enough; on Debian/Ubuntu, `build-essential`.
+enough; on Debian/Ubuntu, `build-essential`. On Windows you need a MinGW-w64
+gcc on `PATH` (from MSYS2, w64devkit, or TDM-GCC), since cgo cannot use MSVC —
+or just use the Docker route below and skip the toolchain entirely.
 
 ## Run the tests
 
@@ -71,6 +73,29 @@ image's working directory) and pass a path relative to it:
 ```bash
 docker run --rm -v "$PWD:/work:ro" astparser myscript.py
 ```
+
+### Windows hosts
+
+Docker Desktop with the WSL2 backend runs these Linux images unchanged, and on
+a typical amd64 Windows box `linux/amd64` is the native platform, so builds are
+faster there than the emulated build on an Apple Silicon Mac.
+
+Only the shell quoting for volume mounts differs:
+
+```powershell
+docker run --rm -v "${PWD}:/work:ro" astparser myscript.py   # PowerShell
+```
+
+```bat
+docker run --rm -v "%cd%:/work:ro" astparser myscript.py
+```
+
+CRLF line endings from a Windows checkout are harmless — both the Go tests and
+this Dockerfile build correctly with them.
+
+The build does require BuildKit (for the `--mount=type=cache` lines); it is the
+default in Docker 23+, so this only matters if you have explicitly set
+`DOCKER_BUILDKIT=0`.
 
 ### A note on architecture
 
