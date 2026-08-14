@@ -126,6 +126,40 @@ repo in the Dev Container (`.devcontainer/devcontainer.json`):
 gopls then runs inside Debian with gcc available and the editor agrees with the
 build.
 
+## Testing locally from Windows
+
+`go test` cannot run on the Windows host (no C compiler for cgo), so run the
+toolchain in a container against your working tree. No image build required:
+
+```powershell
+.\scripts\test.ps1
+```
+
+Extra arguments pass straight through to `go test`:
+
+```powershell
+.\scripts\test.ps1 -run TestDefinitions -v
+```
+
+The script mounts the current directory into `golang:1.24-bookworm` and keeps
+Go's module and build caches in named Docker volumes. Those volumes matter more
+than they look: without them every run recompiles the tree-sitter C grammar.
+
+| | Time |
+|---|---|
+| No cache volumes | ~11s |
+| Module cache only | ~9s |
+| Module + build cache | **~0.3s** |
+
+The equivalent raw command, if you would rather not use the script:
+
+```powershell
+docker run --rm -v "${PWD}:/w" -w /w -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build golang:1.24-bookworm go test ./...
+```
+
+Inside the Dev Container, plain `go test ./...` works directly — the toolchain
+is already Linux-side there.
+
 ## Adding this to a Linux microservice
 
 The parser is cgo, which has one consequence that breaks most Go service
