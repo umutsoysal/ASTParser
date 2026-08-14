@@ -9,6 +9,9 @@ via the official Go bindings.
 - `main.go` — a CLI that prints what it found.
 - `parser/testdata/sample.py` — the Python script the tests parse.
 
+
+Note to the reader: Just a quick tool for my task, if there is any interest, we can flesh this out quickly. cheers. 
+
 ## Requirements
 
 Go 1.24+ and a C compiler — the bindings use cgo and compile the grammar's
