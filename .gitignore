@@ -1,0 +1,8 @@
+# Compiled binaries
+/ASTParser
+/astparser
+*.exe
+
+# Test artifacts
+*.test
+*.out
