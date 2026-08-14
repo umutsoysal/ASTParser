@@ -45,6 +45,44 @@ Add `-sexp` to also print the full syntax tree:
 go run . -sexp testdata/sample.py
 ```
 
+## Docker
+
+No local Go or C toolchain needed. Run the tests:
+
+```bash
+docker build --target test --progress=plain .
+```
+
+Build and run the CLI:
+
+```bash
+docker build -t astparser .
+```
+
+The image bundles `testdata/sample.py`, so a bare `docker run` is a smoke test:
+
+```bash
+docker run --rm astparser
+```
+
+To parse your own files, mount the directory containing them at `/work` (the
+image's working directory) and pass a path relative to it:
+
+```bash
+docker run --rm -v "$PWD:/work:ro" astparser myscript.py
+```
+
+### A note on architecture
+
+Because the bindings are cgo, the grammar is compiled for the target platform —
+you cannot cross-compile with `GOOS`/`GOARCH` alone. Docker handles it, but an
+emulated build is slower (on an M1, `linux/amd64` takes ~48s against ~10s
+native). Build for a non-host platform explicitly:
+
+```bash
+docker build --platform linux/amd64 -t astparser:amd64 .
+```
+
 ## Using the package
 
 ```go

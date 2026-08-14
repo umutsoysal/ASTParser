@@ -1,0 +1,14 @@
+.git
+.gitattributes
+.gitignore
+.claude
+.dockerignore
+Dockerfile
+README.md
+
+# Host-built binaries and test artifacts
+/ASTParser
+/astparser
+*.exe
+*.test
+*.out
