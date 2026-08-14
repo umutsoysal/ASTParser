@@ -184,7 +184,27 @@ import parser "github.com/your-org/your-service/internal/pyparser"
 ```
 
 `parser.go` itself needs no edits — it imports only tree-sitter, nothing from
-this repo. Verify with:
+this repo.
+
+Add the dependencies **before** running `go mod tidy`, using the *module*
+paths:
+
+```bash
+go get github.com/tree-sitter/go-tree-sitter@v0.25.0
+go get github.com/tree-sitter/tree-sitter-python@v0.25.0
+```
+
+Order matters here. Running `go mod tidy` first, on a module that does not yet
+require these, makes it try to resolve the *package* path
+`tree-sitter-python/bindings/go` as if it were a module, and it fails with:
+
+```
+module declares its path as: github.com/tree-sitter/tree-sitter-python
+        but was required as: github.com/tree-sitter/tree-sitter-python/bindings/go
+```
+
+That error reads like a missing dependency or an auth failure, but it is only
+the ordering. `go get` the two module paths, then tidy, then:
 
 ```bash
 go test ./internal/pyparser/...
