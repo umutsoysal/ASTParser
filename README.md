@@ -108,6 +108,70 @@ native). Build for a non-host platform explicitly:
 docker build --platform linux/amd64 -t astparser:amd64 .
 ```
 
+## Developing on Windows (VS Code)
+
+`go get` and `go mod tidy` work fine in PowerShell — they only read and write
+`go.mod`/`go.sum` and never invoke a compiler. But `go build`, `go test`, and
+**gopls** do compile, so on a Windows host without MinGW the VS Code Go
+extension reports errors on the tree-sitter imports even though CI is green.
+
+Rather than installing MinGW for code that only ever ships to Linux, open the
+repo in the Dev Container (`.devcontainer/devcontainer.json`):
+
+> **Dev Containers: Reopen in Container** from the VS Code command palette.
+
+gopls then runs inside Debian with gcc available and the editor agrees with the
+build.
+
+## Adding this to a Linux microservice
+
+The parser is cgo, which has one consequence that breaks most Go service
+Dockerfiles: **`CGO_ENABLED=0` will no longer build.** The usual
+static-binary-for-`scratch` recipe fails as soon as tree-sitter is in the
+import graph.
+
+You do not have to give up the static binary. Alpine plus musl static linking
+produces a ~4MB `scratch` image:
+
+```dockerfile
+FROM golang:1.24-alpine AS build
+RUN apk add --no-cache build-base        # cgo needs a C compiler
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ENV CGO_ENABLED=1                        # was 0
+RUN go build -trimpath \
+      -ldflags='-linkmode external -extldflags "-static"' \
+      -o /out/app .
+
+FROM scratch
+COPY --from=build /out/app /app
+ENTRYPOINT ["/app"]
+```
+
+On a Debian builder (`golang:1.24-bookworm`) gcc is already present, but the
+resulting binary links glibc dynamically — so the final stage needs a matching
+glibc base such as `debian:bookworm-slim`, not `scratch`.
+
+### Private module access
+
+This repository is private, so `go mod download` inside a Docker build cannot
+fetch it without credentials. Set `GOPRIVATE` and pass a token as a BuildKit
+secret rather than baking it into a layer:
+
+```dockerfile
+ENV GOPRIVATE=github.com/umutsoysal/*
+RUN --mount=type=secret,id=ghtoken \
+    git config --global url."https://$(cat /run/secrets/ghtoken)@github.com/".insteadOf "https://github.com/" && \
+    go mod download && \
+    git config --global --unset url."https://$(cat /run/secrets/ghtoken)@github.com/".insteadOf
+```
+
+```bash
+docker build --secret id=ghtoken,env=GITHUB_TOKEN .
+```
+
 ## Using the package
 
 ```go
