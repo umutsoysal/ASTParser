@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM debian:bookworm-slim AS runtime
 RUN useradd --create-home --uid 10001 app
 COPY --from=build /out/astparser /usr/local/bin/astparser
-COPY --from=build /src/testdata /opt/astparser/testdata
+COPY --from=build /src/parser/testdata /opt/astparser/testdata
 USER app
 WORKDIR /work
 ENTRYPOINT ["astparser"]

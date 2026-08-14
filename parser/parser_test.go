@@ -26,7 +26,7 @@ func parseFile(t *testing.T, path string) *parser.Tree {
 }
 
 func TestParseProducesModuleRoot(t *testing.T) {
-	tree := parseFile(t, "../testdata/sample.py")
+	tree := parseFile(t, "testdata/sample.py")
 
 	if got := tree.Root().Kind(); got != "module" {
 		t.Errorf("root kind = %q, want %q", got, "module")
@@ -37,7 +37,7 @@ func TestParseProducesModuleRoot(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	tree := parseFile(t, "../testdata/sample.py")
+	tree := parseFile(t, "testdata/sample.py")
 
 	defs, err := tree.Definitions()
 	if err != nil {
@@ -62,7 +62,7 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestImports(t *testing.T) {
-	tree := parseFile(t, "../testdata/sample.py")
+	tree := parseFile(t, "testdata/sample.py")
 
 	imports, err := tree.Imports()
 	if err != nil {

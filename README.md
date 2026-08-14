@@ -7,7 +7,7 @@ via the official Go bindings.
   file, dump its s-expression, and run tree-sitter queries for definitions and
   imports.
 - `main.go` — a CLI that prints what it found.
-- `testdata/sample.py` — the Python script the tests parse.
+- `parser/testdata/sample.py` — the Python script the tests parse.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ go test ./... -v
 ## Run the CLI
 
 ```bash
-go run . testdata/sample.py
+go run . parser/testdata/sample.py
 ```
 
 ```
@@ -44,7 +44,7 @@ definitions:
 Add `-sexp` to also print the full syntax tree:
 
 ```bash
-go run . -sexp testdata/sample.py
+go run . -sexp parser/testdata/sample.py
 ```
 
 ## Docker
@@ -61,7 +61,7 @@ Build and run the CLI:
 docker build -t astparser .
 ```
 
-The image bundles `testdata/sample.py`, so a bare `docker run` is a smoke test:
+The image bundles `parser/testdata/sample.py`, so a bare `docker run` is a smoke test:
 
 ```bash
 docker run --rm astparser
@@ -153,6 +153,42 @@ ENTRYPOINT ["/app"]
 On a Debian builder (`golang:1.24-bookworm`) gcc is already present, but the
 resulting binary links glibc dynamically — so the final stage needs a matching
 glibc base such as `debian:bookworm-slim`, not `scratch`.
+
+### Porting the package by copying it in
+
+If you would rather not deal with private-module auth, copy the package
+directly. `parser/` is self-contained — its fixture lives in
+`parser/testdata/`, so the whole directory moves as one unit:
+
+```powershell
+Copy-Item -Recurse ..\ASTParser\parser .\internal\pyparser
+```
+
+Then fix the one repo-specific line. `parser_test.go` imports the package by
+its old module path, so point it at yours:
+
+```go
+// before
+import "github.com/umutsoysal/ASTParser/parser"
+
+// after
+import "github.com/your-org/your-service/internal/pyparser"
+```
+
+The package name inside the files stays `parser` regardless of the directory
+name, so either rename the `package parser` declarations to match your
+directory or import it with an alias:
+
+```go
+import parser "github.com/your-org/your-service/internal/pyparser"
+```
+
+`parser.go` itself needs no edits — it imports only tree-sitter, nothing from
+this repo. Verify with:
+
+```bash
+go test ./internal/pyparser/...
+```
 
 ### Private module access
 
